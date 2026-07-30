@@ -1,0 +1,47 @@
+name: Update star badges
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AI_Resource_Matrix.md"
+      - "scripts/update-star-badges.mjs"
+      - ".github/workflows/update-stars.yml"
+  schedule:
+    # Weekly sweep to catch repos that were renamed, transferred, or deleted.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-stars
+  cancel-in-progress: false
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sync star badges
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/update-star-badges.mjs
+
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No badge changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AI_Resource_Matrix.md
+          git commit -m "chore: sync star badges [skip ci]"
+          git push
