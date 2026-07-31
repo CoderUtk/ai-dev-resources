@@ -12,9 +12,32 @@
  */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 
 const source = process.argv[2] ?? "AI_Resource_Matrix.md";
 const outDir = process.argv[3] ?? "site";
+
+/**
+ * Where this repo lives, so the header link survives a rename or transfer.
+ * Actions sets GITHUB_REPOSITORY; locally we read the git remote instead.
+ * Returns null if neither is available, in which case the link is omitted.
+ */
+function repoUrl() {
+  const { GITHUB_REPOSITORY, GITHUB_SERVER_URL } = process.env;
+  if (GITHUB_REPOSITORY) {
+    return `${GITHUB_SERVER_URL ?? "https://github.com"}/${GITHUB_REPOSITORY}`;
+  }
+  try {
+    const remote = execFileSync("git", ["remote", "get-url", "origin"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    const m = remote.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
+    return m ? `https://github.com/${m[1]}` : null;
+  } catch {
+    return null;
+  }
+}
 
 const escapeHtml = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -129,6 +152,7 @@ function renderCell(entries) {
 function renderPage({ headers, rows, title, intro }) {
   const total = rows.reduce((n, r) => n + r.slice(1).reduce((m, c) => m + c.length, 0), 0);
   const built = new Date().toISOString().slice(0, 10);
+  const repo = repoUrl();
 
   const head = headers
     .map((h, i) => `<th${i === 0 ? "" : ""}>${inline(h.replace(/\s*\(Y-Axis\)\s*↓/, ""))}</th>`)
@@ -155,8 +179,9 @@ function renderPage({ headers, rows, title, intro }) {
 <header>
   <h1>${escapeHtml(title)}</h1>
   <p class="intro">${inline(intro)}</p>
-  <p class="meta">${rows.length} categories · ${total} entries · built ${built} ·
-    <a href="https://github.com/CoderUtk/ai-dev-resources" rel="noopener">source on GitHub</a></p>
+  <p class="meta">${rows.length} categories · ${total} entries · built ${built}${
+    repo ? ` ·\n    <a href="${repo}" rel="noopener">source on GitHub</a>` : ""
+  }</p>
 </header>
 <div class="wrap">
   <table>

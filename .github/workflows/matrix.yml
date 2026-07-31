@@ -6,7 +6,7 @@ on:
     paths:
       - "AI_Resource_Matrix.md"
       - "scripts/**"
-      - ".github/workflows/update-stars.yml"
+      - ".github/workflows/matrix.yml"
   schedule:
     # Weekly sweep to catch repos that were renamed, transferred, or deleted.
     - cron: "0 6 * * 1"
