@@ -1,27 +1,26 @@
-name: Update star badges
+name: Sync badges & publish site
 
 on:
   push:
     branches: [main]
     paths:
       - "AI_Resource_Matrix.md"
-      - "scripts/update-star-badges.mjs"
+      - "scripts/**"
       - ".github/workflows/update-stars.yml"
   schedule:
     # Weekly sweep to catch repos that were renamed, transferred, or deleted.
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
-  group: update-stars
+  group: matrix-sync
   cancel-in-progress: false
 
 jobs:
   badges:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -45,3 +44,36 @@ jobs:
           git add AI_Resource_Matrix.md
           git commit -m "chore: sync star badges [skip ci]"
           git push
+
+  publish:
+    needs: badges
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      # Check out main by name so we pick up any commit the badges job just pushed,
+      # rather than the SHA that triggered this run.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build site
+        run: node scripts/build-site.mjs AI_Resource_Matrix.md site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
