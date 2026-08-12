@@ -1,6 +1,6 @@
 # ai-dev-resources
 
-A curated matrix of AI and Claude development resources — 29 categories, 98 entries — organised by what you're trying to do (rows) against how the tool ships (columns: MCP, Website/SaaS, Agent/Plugin, Skill/Config, CLI, Code Repo).
+A curated matrix of AI and Claude development resources, organised by what you're trying to do (rows) against how the tool ships (columns: MCP, Website/SaaS, Agent/Plugin, Skill/Config, CLI, Code Repo). Live counts are on the site header.
 
 ## Browse
 
